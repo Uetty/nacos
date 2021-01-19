@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.common.utils;
 
 import java.io.ByteArrayOutputStream;
@@ -11,18 +25,27 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Locale;
 
 /**
- * 为了防止出现越权的情况，需要对url进行一些规范化处理后，才做url规则匹配
- * <p>参考1：UrlPathHelper.getLookupPathForRequest</p>
- * <p>参考2：RequestUtil.normalize</p>
+ * In order to prevent the situation of overstepping authority,
+ * it is necessary to do URL rule matching after some normalization
+ * processing of the URL.
+ * <p>ref：UrlPathHelper.getLookupPathForRequest</p>
+ * <p>ref：RequestUtil.normalize</p>
+ *
+ * @author vince
  */
 public class RequestUrlUtil {
 
+    /**
+     * uri decode.
+     * @param uri uri
+     * @param charset charset
+     * @return decoded uri
+     */
     public static String uriDecode(String uri, Charset charset) {
         try {
             charset = charset == null ? StandardCharsets.UTF_8 : charset;
             return uriDecode0(uri, charset);
-        }
-        catch (UnsupportedCharsetException ex) {
+        } catch (UnsupportedCharsetException ex) {
             try {
                 return URLDecoder.decode(uri, charset.name());
             } catch (UnsupportedEncodingException e) {
@@ -31,6 +54,12 @@ public class RequestUrlUtil {
         }
     }
 
+    /**
+     * uri decode method.
+     * @param source string that will be decoded
+     * @param charset string charset
+     * @return decoded uri
+     */
     private static String uriDecode0(String source, Charset charset) {
         int length = source.length();
         if (length == 0) {
@@ -39,7 +68,7 @@ public class RequestUrlUtil {
             ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
             boolean changed = false;
 
-            for(int i = 0; i < length; ++i) {
+            for (int i = 0; i < length; ++i) {
                 int ch = source.charAt(i);
                 if (ch == '%') {
                     if (i + 2 >= length) {
@@ -54,7 +83,7 @@ public class RequestUrlUtil {
                         throw new IllegalArgumentException("Invalid encoded sequence \"" + source.substring(i) + "\"");
                     }
 
-                    baos.write((char)((u << 4) + l));
+                    baos.write((char) ((u << 4) + l));
                     i += 2;
                     changed = true;
                 } else {
@@ -67,36 +96,12 @@ public class RequestUrlUtil {
         }
     }
 
-    public static String normalize(String path) {
-        return normalize(path, true);
-    }
-
-    public static String stripPathParams(String uri) {
-        if (uri.indexOf(59) == -1) { // 包含 ;
-            return uri;
-        }
-        StringBuilder sb = new StringBuilder(uri.length());
-        int pos = 0;
-        int limit = uri.length();
-
-        while(pos < limit) {
-            int nextSemiColon = uri.indexOf(59, pos);
-            if (nextSemiColon == -1) {
-                nextSemiColon = limit;
-            }
-
-            sb.append(uri, pos, nextSemiColon);
-            int followingSlash = uri.indexOf(47, nextSemiColon);
-            if (followingSlash < 0) {
-                pos = limit;
-            } else {
-                pos = followingSlash;
-            }
-        }
-
-        return sb.toString();
-    }
-
+    /**
+     * normalize uri.
+     * @param path uri
+     * @param replaceBackSlash if replace back slash
+     * @return normalized uri
+     */
     public static String normalize(String path, boolean replaceBackSlash) {
         if (path == null) {
             return null;
@@ -153,6 +158,54 @@ public class RequestUrlUtil {
         return normalized;
     }
 
+    /**
+     * normalize uri.
+     * @param path uri path
+     * @return normalized uri
+     */
+    public static String normalize(String path) {
+        return normalize(path, true);
+    }
+
+    /**
+     * resolve uri that with semi colon.
+     * @param uri uri
+     * @return resolved uri
+     */
+    public static String stripPathParams(String uri) {
+        if (uri.indexOf(59) == -1) { // 包含 ;
+            return uri;
+        }
+        StringBuilder sb = new StringBuilder(uri.length());
+        int pos = 0;
+        int limit = uri.length();
+
+        while (pos < limit) {
+            int nextSemiColon = uri.indexOf(59, pos);
+            if (nextSemiColon == -1) {
+                nextSemiColon = limit;
+            }
+
+            sb.append(uri, pos, nextSemiColon);
+            int followingSlash = uri.indexOf(47, nextSemiColon);
+            if (followingSlash < 0) {
+                pos = limit;
+            } else {
+                pos = followingSlash;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * same origin judge, for prevent cors.
+     * @param scheme scheme
+     * @param host address host
+     * @param port address pot
+     * @param origin allow origin
+     * @return is same origin
+     */
     public static boolean isSameOrigin(String scheme, String host, int port, String origin) {
         StringBuilder target = new StringBuilder();
         if (scheme == null) {
@@ -166,7 +219,8 @@ public class RequestUrlUtil {
             } else {
                 target.append(host);
                 if (target.length() == origin.length()) {
-                    if (("http".equals(scheme) || "ws".equals(scheme)) && port != 80 || ("https".equals(scheme) || "wss".equals(scheme)) && port != 443) {
+                    if (("http".equals(scheme) || "ws".equals(scheme)) && port != 80
+                            || ("https".equals(scheme) || "wss".equals(scheme)) && port != 443) {
                         target.append(':');
                         target.append(port);
                     }
@@ -180,6 +234,11 @@ public class RequestUrlUtil {
         }
     }
 
+    /**
+     * is valid origin.
+     * @param origin allow origin
+     * @return yes or not
+     */
     public static boolean isValidOrigin(String origin) {
         if (origin.contains("%")) {
             return false;
@@ -188,14 +247,14 @@ public class RequestUrlUtil {
         } else if (origin.startsWith("file://")) {
             return true;
         } else {
-            URI originURI;
+            URI originUri;
             try {
-                originURI = new URI(origin);
-            } catch (URISyntaxException var3) {
+                originUri = new URI(origin);
+            } catch (URISyntaxException e) {
                 return false;
             }
 
-            return originURI.getScheme() != null;
+            return originUri.getScheme() != null;
         }
     }
 }

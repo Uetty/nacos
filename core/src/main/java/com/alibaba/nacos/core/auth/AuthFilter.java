@@ -32,8 +32,11 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -65,32 +68,32 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-//        String[] url = {
-//            ((HttpServletRequest) request).getRequestURI(),
-//            String.valueOf(((HttpServletRequest) request).getRequestURL()),
-//            ((HttpServletRequest) request).getPathInfo(),
-//            ((HttpServletRequest) request).getContextPath(),
-//            ((HttpServletRequest) request).getServletPath()
-//        };
-//        System.out.println(String.join(", ", url));
-//
-//        Enumeration<String> keys = ((HttpServletRequest) request).getHeaderNames();
-//        Map<String, String> map = new HashMap<>();
-//        while (keys.hasMoreElements()) {
-//            String key = keys.nextElement().toLowerCase();
-//            map.put(key, ((HttpServletRequest) request).getHeader(key));
-//        }
-//        System.out.println("H" + map);
-//
-//        Map<String, String> pmap = new HashMap<>();
-//        Enumeration<String> parameterNames = request.getParameterNames();
-//        while (parameterNames.hasMoreElements()) {
-//            String key = parameterNames.nextElement();
-//            String[] parameterValues = request.getParameterValues(key);
-//            pmap.put(key, String.join(", ", parameterValues));
-//        }
-//
-//        System.out.println("P" + pmap);
+        //        String[] url = {
+        //            ((HttpServletRequest) request).getRequestURI(),
+        //            String.valueOf(((HttpServletRequest) request).getRequestURL()),
+        //            ((HttpServletRequest) request).getPathInfo(),
+        //            ((HttpServletRequest) request).getContextPath(),
+        //            ((HttpServletRequest) request).getServletPath()
+        //        };
+        //        System.out.println(String.join(", ", url));
+        //
+        //        Enumeration<String> keys = ((HttpServletRequest) request).getHeaderNames();
+        //        Map<String, String> map = new HashMap<>();
+        //        while (keys.hasMoreElements()) {
+        //            String key = keys.nextElement().toLowerCase();
+        //            map.put(key, ((HttpServletRequest) request).getHeader(key));
+        //        }
+        //        System.out.println("H" + map);
+        //
+        //        Map<String, String> pmap = new HashMap<>();
+        //        Enumeration<String> parameterNames = request.getParameterNames();
+        //        while (parameterNames.hasMoreElements()) {
+        //            String key = parameterNames.nextElement();
+        //            String[] parameterValues = request.getParameterValues(key);
+        //            pmap.put(key, String.join(", ", parameterValues));
+        //        }
+        //
+        //        System.out.println("P" + pmap);
 
         if (!authConfigs.isAuthEnabled()) {
             chain.doFilter(request, response);
@@ -101,43 +104,45 @@ public class AuthFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
 
         try {
-            String requestURI = req.getRequestURI();
-            requestURI = RequestUrlUtil.normalize(requestURI);
-            requestURI = RequestUrlUtil.uriDecode(requestURI, StandardCharsets.UTF_8);
-            requestURI = RequestUrlUtil.stripPathParams(requestURI);
+            String requestUri = req.getRequestURI();
+            requestUri = RequestUrlUtil.normalize(requestUri);
+            requestUri = RequestUrlUtil.uriDecode(requestUri, StandardCharsets.UTF_8);
+            requestUri = RequestUrlUtil.stripPathParams(requestUri);
 
-            if (requestURI.equalsIgnoreCase("/nacos")
-                || requestURI.equalsIgnoreCase("/nacos/index.html")
-                || requestURI.startsWith("/nacos/js/")
-                || requestURI.startsWith("/nacos/img/")
-                || requestURI.startsWith("/nacos/css/")
-                || requestURI.startsWith("/nacos/console-ui/")) {
+            if (requestUri.equalsIgnoreCase("/nacos")
+                    || requestUri.equalsIgnoreCase("/nacos/index.html")
+                    || requestUri.startsWith("/nacos/js/")
+                    || requestUri.startsWith("/nacos/img/")
+                    || requestUri.startsWith("/nacos/css/")
+                    || requestUri.startsWith("/nacos/console-ui/")) {
                 chain.doFilter(request, response);
-//                System.out.println();
+                //                System.out.println();
                 return;
             }
 
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) { }
 
         String signature = req.getHeader("spas-signature");
         String accessKey = req.getHeader("spas-accesskey");
         String timestamp = req.getHeader("timestamp");
         String tenant = req.getParameter("tenant");
         String group = req.getParameter("group");
-        if (signature != null && StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils.isNotBlank(authConfigs.getServerIdentityValue())) {
+        if (signature != null
+                && StringUtils.isNotBlank(authConfigs.getServerIdentityKey())
+                && StringUtils.isNotBlank(authConfigs.getServerIdentityValue())) {
             String calcSign = SpasAdapter.calculateSign(tenant, group, timestamp, authConfigs.getServerIdentityValue());
 
             if (Objects.equals(signature, calcSign)
-                && Objects.equals(accessKey, authConfigs.getServerIdentityKey())) {
+                    && Objects.equals(accessKey, authConfigs.getServerIdentityKey())) {
 
                 chain.doFilter(request, response);
-//                System.out.println();
+                //                System.out.println();
                 return;
             }
         }
 
-//        System.out.println("----------");
-//        System.out.println();
+        //        System.out.println("----------");
+        //        System.out.println();
 
         if (authConfigs.isEnableUserAgentAuthWhite()) {
             String userAgent = WebUtils.getUserAgent(req);
