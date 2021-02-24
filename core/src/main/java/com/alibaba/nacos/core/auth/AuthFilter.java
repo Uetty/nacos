@@ -82,6 +82,7 @@ public class AuthFilter implements Filter {
             requestUri = RequestUrlUtil.uriDecode(requestUri, StandardCharsets.UTF_8);
             requestUri = RequestUrlUtil.stripPathParams(requestUri);
 
+            // web static do not filter
             if (requestUri.equalsIgnoreCase("/nacos")
                     || requestUri.equalsIgnoreCase("/nacos/index.html")
                     || requestUri.startsWith("/nacos/js/")
@@ -94,6 +95,7 @@ public class AuthFilter implements Filter {
 
         } catch (Exception ignore) { }
 
+        // not filter some signed request
         String signature = req.getHeader("spas-signature");
         String accessKey = req.getHeader("spas-accesskey");
         String timestamp = req.getHeader("timestamp");
