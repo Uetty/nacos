@@ -68,33 +68,6 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        //        String[] url = {
-        //            ((HttpServletRequest) request).getRequestURI(),
-        //            String.valueOf(((HttpServletRequest) request).getRequestURL()),
-        //            ((HttpServletRequest) request).getPathInfo(),
-        //            ((HttpServletRequest) request).getContextPath(),
-        //            ((HttpServletRequest) request).getServletPath()
-        //        };
-        //        System.out.println(String.join(", ", url));
-        //
-        //        Enumeration<String> keys = ((HttpServletRequest) request).getHeaderNames();
-        //        Map<String, String> map = new HashMap<>();
-        //        while (keys.hasMoreElements()) {
-        //            String key = keys.nextElement().toLowerCase();
-        //            map.put(key, ((HttpServletRequest) request).getHeader(key));
-        //        }
-        //        System.out.println("H" + map);
-        //
-        //        Map<String, String> pmap = new HashMap<>();
-        //        Enumeration<String> parameterNames = request.getParameterNames();
-        //        while (parameterNames.hasMoreElements()) {
-        //            String key = parameterNames.nextElement();
-        //            String[] parameterValues = request.getParameterValues(key);
-        //            pmap.put(key, String.join(", ", parameterValues));
-        //        }
-        //
-        //        System.out.println("P" + pmap);
-
         if (!authConfigs.isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
@@ -116,7 +89,6 @@ public class AuthFilter implements Filter {
                     || requestUri.startsWith("/nacos/css/")
                     || requestUri.startsWith("/nacos/console-ui/")) {
                 chain.doFilter(request, response);
-                //                System.out.println();
                 return;
             }
 
@@ -136,13 +108,10 @@ public class AuthFilter implements Filter {
                     && Objects.equals(accessKey, authConfigs.getServerIdentityKey())) {
 
                 chain.doFilter(request, response);
-                //                System.out.println();
                 return;
             }
         }
 
-        //        System.out.println("----------");
-        //        System.out.println();
 
         if (authConfigs.isEnableUserAgentAuthWhite()) {
             String userAgent = WebUtils.getUserAgent(req);
